@@ -41,7 +41,6 @@ class AnsibleModel(WebsocketConsumer,AssetsAnsible):
     def receive(self, text_data=None, bytes_data=None):
         try:
             request = json.loads(text_data)
-            request["user"] = self.scope["user"]
             request["is_superuser"] = self.scope["user"].is_superuser
         except Exception as ex:
             self.send(text_data="Ansible Doc运行失败: {ex}".format(ex=ex))   
@@ -73,7 +72,7 @@ class AnsibleModel(WebsocketConsumer,AssetsAnsible):
         
         count = len(sList)
         
-        if count > 0 and request["user"].has_perm('deploy.deploy_exec_deploy_model'):
+        if count > 0:
             
             self.logId = self.record_resullt(self.scope["user"].username, model_name, ','.join(sList), request.get('deploy_args',""))
 
@@ -130,7 +129,6 @@ class AnsibleScript(WebsocketConsumer,AssetsAnsible):
     def receive(self, text_data=None, bytes_data=None):
         try:
             request = json.loads(text_data)
-            request["user"] = self.scope["user"]
             request["is_superuser"] = self.scope["user"].is_superuser
         except Exception as ex:
             self.send(text_data="Ansible Script运行失败: {ex}".format(ex=ex))   
@@ -152,12 +150,11 @@ class AnsibleScript(WebsocketConsumer,AssetsAnsible):
             return False 
         
     def run_scripts(self,request):
-
         sList,resource = self.allowcator(request.get('server_model'), request)         
         
         count = len(sList)                      
                                              
-        if count > 0 and request.get('script_file') and request["user"].has_perm('deploy.deploy_exec_deploy_script'):      
+        if count > 0 and request.get('script_file'):      
             self.logId = self.record_resullt(self.scope["user"].username, 'script', ','.join(sList), request.get('script_args',""))
                    
             filePath = self.saveScript(content=request.get('script_file'),filePath='/tmp/script-{ram}'.format(ram=uuid.uuid4().hex[0:8]))
@@ -218,7 +215,6 @@ class AnsiblePlaybook(WebsocketConsumer,AssetsAnsible):
     def receive(self, text_data=None, bytes_data=None):
         try:
             request = json.loads(text_data)
-            request["user"] = self.scope["user"]
             request["is_superuser"] = self.scope["user"].is_superuser
         except Exception as ex:
             self.send(text_data="Ansible Playbook运行失败: {ex}".format(ex=ex))   
@@ -269,7 +265,7 @@ class AnsiblePlaybook(WebsocketConsumer,AssetsAnsible):
             self.send("读取剧本错误: {ex}" % str(ex))
             self.close()
         #执行ansible playbook
-        if count > 0 and request["user"].has_perm('deploy.deploy_exec_deploy_playbook'):           
+        if count > 0:           
             self.logId = self.record_resullt(playbook.id, self.scope["user"].username, playbook.playbook_name, playbook.playbook_desc, sList)
             
             ANS = ANSRunner(hosts=resource,websocket=self)                  
